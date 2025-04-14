@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem "Kraljice" Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(var(--size), 40px);
+            grid-template-rows: repeat(var(--size), 40px);
+            gap: 1px;
+            border: 2px solid #333;
+        }
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            background-color: #f0d9b5;
+        }
+        .cell.dark {
+            background-color: #b58863;
+        }
+        .cell.queen {
+            background-color: #ff6b6b;
+        }
+        .cell.valid {
+            box-shadow: inset 0 0 0 2px #4CAF50;
+        }
+        .cell.invalid {
+            box-shadow: inset 0 0 0 2px #f44336;
+        }
+        .info {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Problem "Kraljice" Simulator</h1>
+    <div class="controls">
+        <label for="boardSize">Size:</label>
+        <input type="number" id="boardSize" min="1" max="50" value="5">
+        <button id="resetBtn">Reset</button>
+    </div>
+    <div class="board" id="chessBoard"></div>
+    <div class="info">
+        <p>Count: <span id="queenCount">0</span></p>
+        <p>Click on the last empress placed to undo the operation</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const boardElement = document.getElementById('chessBoard');
+            const resetBtn = document.getElementById('resetBtn');
+            const boardSizeInput = document.getElementById('boardSize');
+            const queenCountElement = document.getElementById('queenCount');
+            
+            let boardSize = parseInt(boardSizeInput.value);
+            let board = [];
+            let queens = [];
+            
+            function initBoard() {
+                boardSize = parseInt(boardSizeInput.value);
+                board = Array(boardSize).fill().map(() => Array(boardSize).fill(0));
+                queens = [];
+                renderBoard();
+                updateQueenCount();
+            }
+            
+            function renderBoard() {
+                boardElement.style.setProperty('--size', boardSize);
+                boardElement.innerHTML = '';
+                
+                for (let row = 0; row < boardSize; row++) {
+                    for (let col = 0; col < boardSize; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = `cell ${(row + col) % 2 === 1 ? 'dark' : ''}`;
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        if (board[row][col] === 1) {
+                            cell.classList.add('queen');
+                            cell.textContent = '♛';
+                        }
+                        
+                        cell.addEventListener('click', () => handleCellClick(row, col));
+                        cell.addEventListener('mouseenter', () => highlightAttacks(row, col));
+                        cell.addEventListener('mouseleave', () => clearHighlights());
+                        
+                        boardElement.appendChild(cell);
+                    }
+                }
+                
+                updateValidCells();
+            }
+            
+            function handleCellClick(row, col) {
+                if (board[row][col] === 1) {
+                    const lst = queens[queens.length - 1]
+                    if (lst.row !== row || lst.col !== col) return
+                    board[row][col] = 0;
+                    queens = queens.filter(q => !(q.row === row && q.col === col));
+                } else {
+                    if (canPlaceQueen(row, col)) {
+                        board[row][col] = 1;
+                        queens.push({ row, col });
+                    }
+                }
+                
+                renderBoard();
+                updateQueenCount();
+            }
+            
+            function canPlaceQueen(row, col) {
+                let attackCount = 0;
+                
+                for (const queen of queens) {
+                    if (isAttacked(row, col, queen.row, queen.col)) {
+                        attackCount++;
+                    }
+                }
+                
+                return attackCount % 2 === 0;
+            }
+            
+            function isAttacked(row1, col1, row2, col2) {
+                return row1 === row2 || col1 === col2 || 
+                       Math.abs(row1 - row2) === Math.abs(col1 - col2);
+            }
+            
+            function updateValidCells() {
+                const cells = document.querySelectorAll('.cell');
+                
+                cells.forEach(cell => {
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    
+                    if (board[row][col] === 0) {
+                        if (canPlaceQueen(row, col)) {
+                            cell.classList.add('valid');
+                        } else {
+                            cell.classList.add('invalid');
+                        }
+                    }
+                });
+            }
+            
+            function highlightAttacks(row, col) {
+                const cells = document.querySelectorAll('.cell');
+                
+                cells.forEach(cell => {
+                    const r = parseInt(cell.dataset.row);
+                    const c = parseInt(cell.dataset.col);
+                    
+                    if (isAttacked(r, c, row, col)) {
+                        cell.classList.add('highlight');
+                    }
+                });
+            }
+            
+            function clearHighlights() {
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach(cell => cell.classList.remove('highlight'));
+            }
+            
+            function updateQueenCount() {
+                queenCountElement.textContent = queens.length;
+            }
+            
+            resetBtn.addEventListener('click', initBoard);
+            boardSizeInput.addEventListener('change', initBoard);
+            
+            initBoard();
+        });
+    </script>
+</body>
+</html>
