@@ -88,6 +88,7 @@
                 [' ZZZ ', 2],
                 [' yoyi ', 2],
                 [' mil ', 2],
+                [' sa ', 2],
                 ['马', 4],
                 ['王吉吉', 2],
                 ['小圆球', 2],
@@ -97,6 +98,11 @@
                 ['大吅', 2],
                 ['顿先', 2],
                 ['绷', 1],
+            ];
+            const verbs = [
+                ['吃', 5],
+                [' D ', 1],
+                [' 绷 ', 1],
             ];
             const adverbs = [
                 ['绷不住', 4],
@@ -108,6 +114,19 @@
                 ['又', 2],
                 ['真还再最又', 1],
             ];
+            const _gen_adverbs = () => {
+                const prefix = rand_int(1, 3) === 1 ? _gen_adverbs() : '';
+                const limited = ['真', '还', '再', '最', '又'];
+                let str;
+                do str = rand_choice_weight(adverbs);
+                while (limited.some((x) => str.includes(x)) && limited.some((x) => prefix.endsWith(x)));
+                return prefix + str;
+            };
+            const gen_adverbs = () => {
+                let str = _gen_adverbs();
+                if (rand_int(1, 4) === 1) str = str + '把';
+                return str;
+            };
             const types = [
                 () => {
                     let p1, p2, arr;
@@ -120,12 +139,12 @@
                     if (p1 != '我') arr.push(['我', 2]);
                     return [
                         p1,
-                        rand_int(1, 3) === 1 ? rand_choice_weight(adverbs) : '',
+                        rand_int(1, 3) === 1 ? gen_adverbs() : '',
                         '吃',
                         p2,
                         ...(rand_int(1, 3) === 1 ? [] : [
                             rand_choice_weight(arr),
-                            rand_int(1, 3) === 1 ? rand_choice_weight(adverbs) : '',
+                            rand_int(1, 3) === 1 ? gen_adverbs() : '',
                             rand_choice(['爽', '被 D', '绷']),
                         ]),
                     ];
